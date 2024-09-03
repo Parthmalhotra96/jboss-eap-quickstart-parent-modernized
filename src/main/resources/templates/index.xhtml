@@ -13,15 +13,15 @@
 <form th:action="@{/members}" th:object="${newMember}" method="post">
     <div>
         <label for="name">Name:</label>
-        <input type="text" th:field="*{name}" />
+        <input type="text" th:field="*{name}" pattern="[a-zA-Z]+" required="required" title="Please enter valid name, only letters allowed"/>
     </div>
     <div>
         <label for="email">Email:</label>
-        <input type="email" th:field="*{email}" />
+        <input type="email" th:field="*{email}" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" required="required" title="Please enter a valid email address (e.g. example@example.com)"/>
     </div>
     <div>
         <label for="phoneNumber">Phone Number:</label>
-        <input type="text" th:field="*{phoneNumber}" />
+        <input type="text" th:field="*{phoneNumber}" pattern="[0-9]{10,12}" required="required" title="Please enter a valid phone number (10-12 digits)"/>
     </div>
     <div>
         <button type="submit">Register</button>
@@ -50,7 +50,7 @@
         <td th:text="${member.email}">Email</td>
         <td th:text="${member.phoneNumber}">Phone Number</td>
         <td>
-            <a th:utext="'/kitchensink/rest/members/' + ${member.id}">/rest/members/{id}</a>
+            <a th:href="'/kitchensink/rest/members/' + ${member.id}"> /rest/members/<a th:text="${member.id}">{id}</a></a>
         </td>
         <td>
             <!-- Add a form for deleting the member -->

@@ -18,51 +18,63 @@ package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Optional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Controller
 public class MemberController {
 
-    private final MemberRegistration memberRegistration;
     private final MemberRestController memberRestController;
 
     @GetMapping("/index")
     public String showRegistrationForm(Model model) {
         model.addAttribute("newMember", new Member());
-        List<Member> members = memberRestController.listAllMembers().getBody();
+        List<MemberDTO> members = memberRestController.listAllMembers().getBody();
         model.addAttribute("members", members);
 
-        members.forEach(member -> System.out.println("Member: " + member.getId() + ", " + member.getName()));
+        Optional.ofNullable(members)
+                .ifPresent(m -> m.forEach(member -> log.debug("Member: {}, {}", member.id(), member.name())));
 
         return "index";
     }
 
     @PostMapping("/members")
-    public String addMember(@ModelAttribute Member member, RedirectAttributes redirectAttributes) {
+    public String addMember(@ModelAttribute("newMember") Member member, RedirectAttributes redirectAttributes, BindingResult bindingResult) {
+        log.debug("Adding new member: {}", member);
         try {
-            memberRestController.createMember(member);
+            memberRestController.createMember(MemberDTO.fromMember(member));
         } catch (ValidationException e) {
+            log.error("Email is already taken: {}", e.getMessage());
             redirectAttributes.addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
             return "index";
         } catch (Exception e) {
+            log.error("An unexpected error occurred: {}", e.getMessage());
             redirectAttributes.addAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
             return "index";
         }
+        log.debug("Member added successfully");
         return "redirect:/index";
     }
 
-//    @PostMapping("/members/{id}/delete")
-//    public String deleteMember(@PathVariable Long id) {
-//        memberRestController.deleteMember(id);
-//        return "redirect:/index";
-//    }
+    //TODO: replace the delete in endpoint with delete mapping
+    @PostMapping("/members/{id}/delete")
+    public String deleteMember(@PathVariable Long id) {
+        log.debug("Deleting member with ID: {}", id);
+        memberRestController.deleteMemberById(id);
+        log.debug("Member deleted successfully");
+        return "redirect:/index";
+    }
 }

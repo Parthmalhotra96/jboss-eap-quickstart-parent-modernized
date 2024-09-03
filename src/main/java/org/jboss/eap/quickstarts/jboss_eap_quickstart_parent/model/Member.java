@@ -26,6 +26,7 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
 
 @Getter
 @Setter
@@ -52,5 +53,14 @@ public class Member {
     @Digits(fraction = 0, integer = 12)
     @Column(name = "phone_number")
     private String phoneNumber;
+
+    public static Member fromMemberDTO(MemberDTO memberDTO) {
+        Member member = new Member();
+        member.setId(memberDTO.id());
+        member.setName(memberDTO.name());
+        member.setEmail(memberDTO.email());
+        member.setPhoneNumber(memberDTO.phoneNumber());
+        return member;
+    }
 }
 

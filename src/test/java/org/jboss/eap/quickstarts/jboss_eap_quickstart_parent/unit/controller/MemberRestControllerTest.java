@@ -14,6 +14,7 @@ import jakarta.validation.ValidatorFactory;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ public class MemberRestControllerTest {
     public void testListAllMembers() {
         when(repository.findAllByOrderByName()).thenReturn(Collections.emptyList());
 
-        ResponseEntity<List<Member>> response = controller.listAllMembers();
+        ResponseEntity<List<MemberDTO>> response = controller.listAllMembers();
         assertEquals(ResponseEntity.noContent().build(), response);
     }
 
@@ -59,8 +60,8 @@ public class MemberRestControllerTest {
         member.setId(1L);
         when(repository.findById(1L)).thenReturn(Optional.of(member));
 
-        ResponseEntity<Member> response = controller.lookupMemberById(1L);
-        assertEquals(ResponseEntity.ok(member), response);
+        ResponseEntity<MemberDTO> response = controller.lookupMemberById(1L);
+        assertEquals(ResponseEntity.ok(member).getBody().getId(), response.getBody().id());
     }
 
     @Test
@@ -71,7 +72,7 @@ public class MemberRestControllerTest {
         when(validator.validate(any(Member.class))).thenReturn(Collections.emptySet());
         when(repository.findByEmail("test@example.com")).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.createMember(member);
+        ResponseEntity<?> response = controller.createMember(MemberDTO.fromMember(member));
         assertEquals(ResponseEntity.ok().build(), response);
     }
 }
