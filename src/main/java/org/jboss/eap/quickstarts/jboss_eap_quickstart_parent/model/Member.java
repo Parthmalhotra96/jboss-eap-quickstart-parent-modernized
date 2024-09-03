@@ -24,12 +24,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@RequiredArgsConstructor
 @Entity
 @Table(name = "member", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class Member {
@@ -61,6 +65,12 @@ public class Member {
         member.setEmail(memberDTO.email());
         member.setPhoneNumber(memberDTO.phoneNumber());
         return member;
+    }
+
+    public Member(String phoneNumber, String email, String name) {
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.name = name;
     }
 }
 

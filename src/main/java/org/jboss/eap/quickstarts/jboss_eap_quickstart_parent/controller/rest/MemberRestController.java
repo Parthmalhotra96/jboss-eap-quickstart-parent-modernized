@@ -16,7 +16,6 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/rest/members")
-@Validated
 public class MemberRestController {
 
     @Autowired

@@ -1,4 +1,4 @@
-package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.unit.controller;
+package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.unit.controller.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
