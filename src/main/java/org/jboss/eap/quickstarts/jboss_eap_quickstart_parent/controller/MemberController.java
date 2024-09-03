@@ -16,58 +16,54 @@
  */
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller;
 
+import jakarta.validation.ValidationException;
+import lombok.RequiredArgsConstructor;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
+@RequiredArgsConstructor
 @Controller
-@RequestMapping("/members")
 public class MemberController {
 
     private final MemberRegistration memberRegistration;
+    private final MemberRestController memberRestController;
 
-    @Autowired
-    public MemberController(MemberRegistration memberRegistration) {
-        this.memberRegistration = memberRegistration;
+    @GetMapping("/index")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("newMember", new Member());
+        List<Member> members = memberRestController.listAllMembers().getBody();
+        model.addAttribute("members", members);
+
+        members.forEach(member -> System.out.println("Member: " + member.getId() + ", " + member.getName()));
+
+        return "index";
     }
 
-    @GetMapping
-    @ResponseBody
-    public Member getNewMember() {
-        return new Member();
-    }
-
-    @PostMapping
-    @ResponseBody
-    public ResponseEntity<String> register(@RequestBody Member newMember) {
+    @PostMapping("/members")
+    public String addMember(@ModelAttribute Member member, RedirectAttributes redirectAttributes) {
         try {
-            memberRegistration.register(newMember);
-            return ResponseEntity.ok("Registered!");
+            memberRestController.createMember(member);
+        } catch (ValidationException e) {
+            redirectAttributes.addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
+            return "index";
         } catch (Exception e) {
-            String errorMessage = getRootErrorMessage(e);
-            return ResponseEntity.badRequest().body(errorMessage);
+            redirectAttributes.addAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
+            return "index";
         }
+        return "redirect:/index";
     }
 
-    private String getRootErrorMessage(Exception e) {
-        // Default to general error message that registration failed.
-        String errorMessage = "Registration failed. See server log for more information";
-        if (e == null) {
-            // This shouldn't happen, but return the default messages
-            return errorMessage;
-        }
-
-        // Start with the exception and recurse to find the root cause
-        Throwable t = e;
-        while (t != null) {
-            // Get the message from the Throwable class instance
-            errorMessage = t.getLocalizedMessage();
-            t = t.getCause();
-        }
-        // This is the root cause message
-        return errorMessage;
-    }
+//    @PostMapping("/members/{id}/delete")
+//    public String deleteMember(@PathVariable Long id) {
+//        memberRestController.deleteMember(id);
+//        return "redirect:/index";
+//    }
 }

@@ -16,7 +16,6 @@
  */
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -28,7 +27,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     Optional<Member> findByEmail(String email);
 
-    List<Member> findAllByIdOrderedByName();
+    List<Member> findAllByOrderByName();
 
-    List<Member> findAllByOrder(Sort sort);
 }

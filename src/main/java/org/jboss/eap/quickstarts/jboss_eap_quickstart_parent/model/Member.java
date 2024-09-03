@@ -23,18 +23,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "members", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@Table(name = "member", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class Member {
 
     @Id
@@ -48,6 +44,7 @@ public class Member {
 
     @NotNull
     @Email
+    @NotEmpty
     private String email;
 
     @NotNull

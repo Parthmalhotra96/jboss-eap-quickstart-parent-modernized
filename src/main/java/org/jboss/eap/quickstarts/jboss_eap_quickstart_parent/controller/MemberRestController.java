@@ -30,9 +30,9 @@ import java.util.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/members")
+@RequestMapping("/api/members")
 @Validated
-public class MemberResourceRestController {
+public class MemberRestController {
 
     @Autowired
     private Validator validator;
@@ -44,8 +44,9 @@ public class MemberResourceRestController {
     private MemberRegistration registration;
 
     @GetMapping
-    public List<Member> listAllMembers() {
-        return repository.findAllByIdOrderedByName();
+    public ResponseEntity<List<Member>> listAllMembers() {
+        List<Member> members = repository.findAllByOrderByName();
+        return members.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(members);
     }
 
     @GetMapping("/{id}")
@@ -73,7 +74,7 @@ public class MemberResourceRestController {
         }
     }
 
-    private void validateMember(Member member) throws ConstraintViolationException, ValidationException {
+    private void validateMember(Member member) throws ValidationException {
         Set<ConstraintViolation<Member>> violations = validator.validate(member);
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);

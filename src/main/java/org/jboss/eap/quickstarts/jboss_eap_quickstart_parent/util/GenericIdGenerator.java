@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Component
-public class IdGenerator {
+public class GenericIdGenerator {
 
     private final AtomicLong counter = new AtomicLong();
 

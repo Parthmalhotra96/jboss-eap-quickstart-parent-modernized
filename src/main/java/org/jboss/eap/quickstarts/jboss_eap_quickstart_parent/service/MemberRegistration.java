@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.util.IdGenerator;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.util.GenericIdGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
@@ -36,27 +36,20 @@ public class MemberRegistration {
     private MemberRepository memberRepository;
 
     @Autowired
-    private IdGenerator idGenerator;
+    private GenericIdGenerator genericIdGenerator;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
     public void register(Member member) throws Exception {
         log.info("Registering {}", member.getName());
-        member.setId(idGenerator.getNextId());
+        member.setId(genericIdGenerator.getNextId());
         memberRepository.save(member);
         eventPublisher.publishEvent(member);
     }
 
     public void deleteById(Long id) {
-        log.info("Deleting member with " + id);
+        log.info("Deleting member with {}", id);
         memberRepository.deleteById(id);
     }
-
-    public List<Member> getAllMembersByName() {
-        log.info("Fetching all the members ");
-        return memberRepository.findAllByOrder(Sort.by(Sort.Order.asc("name")));
-    }
-
-
 }
