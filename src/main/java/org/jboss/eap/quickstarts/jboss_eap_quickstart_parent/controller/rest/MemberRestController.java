@@ -30,7 +30,15 @@ public class MemberRestController {
     @GetMapping
     public ResponseEntity<List<MemberDTO>> listAllMembers() {
         log.info("Received request to list all members");
-        List<Member> members = repository.findAllByOrderByName();
+
+        List<Member> members = new ArrayList<>();
+        try {
+            members = repository.findAllByOrderByName();
+        } catch (Exception exception) {
+            log.error("Error retrieving data : {}", exception.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+
         log.debug("Found {} members", members.size());
         List<MemberDTO> memberDTOs = members.stream()
                 .map(MemberDTO::fromMember)
@@ -41,7 +49,15 @@ public class MemberRestController {
     @GetMapping("/{id}")
     public ResponseEntity<MemberDTO> lookupMemberById(@PathVariable("id") long id) {
         log.info("Received request to lookup member by id: {}", id);
-        Optional<Member> member = repository.findById(id);
+
+        Optional<Member> member = Optional.empty();
+        try {
+             member = repository.findById(id);
+        } catch (Exception exception) {
+            log.error("Error retrieving data : {}", exception.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+
         log.debug("Member found: {}", member.isPresent());
         return member.map(m -> ResponseEntity.ok(MemberDTO.fromMember(m)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
