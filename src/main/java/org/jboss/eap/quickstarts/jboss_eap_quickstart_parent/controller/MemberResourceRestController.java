@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.rest;
+package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller;
 
 import jakarta.validation.*;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/members")
 @Validated
-public class MemberResourceRESTService {
+public class MemberResourceRestController {
 
     @Autowired
     private Validator validator;

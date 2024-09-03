@@ -14,32 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.quickstarts.kitchensink.service;
+package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service;
 
-import org.jboss.as.quickstarts.kitchensink.model.Member;
+import lombok.extern.slf4j.Slf4j;
 
-import jakarta.ejb.Stateless;
-import jakarta.enterprise.event.Event;
-import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import java.util.logging.Logger;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.util.IdGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
 
-// The @Stateless annotation eliminates the need for manual transaction demarcation
-@Stateless
+import java.util.List;
+
+@Slf4j
+@Service
 public class MemberRegistration {
 
-    @Inject
-    private Logger log;
+    @Autowired
+    private MemberRepository memberRepository;
 
-    @Inject
-    private EntityManager em;
+    @Autowired
+    private IdGenerator idGenerator;
 
-    @Inject
-    private Event<Member> memberEventSrc;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public void register(Member member) throws Exception {
-        log.info("Registering " + member.getName());
-        em.persist(member);
-        memberEventSrc.fire(member);
+        log.info("Registering {}", member.getName());
+        member.setId(idGenerator.getNextId());
+        memberRepository.save(member);
+        eventPublisher.publishEvent(member);
     }
+
+    public void deleteById(Long id) {
+        log.info("Deleting member with " + id);
+        memberRepository.deleteById(id);
+    }
+
+    public List<Member> getAllMembersByName() {
+        log.info("Fetching all the members ");
+        return memberRepository.findAllByOrder(Sort.by(Sort.Order.asc("name")));
+    }
+
+
 }
