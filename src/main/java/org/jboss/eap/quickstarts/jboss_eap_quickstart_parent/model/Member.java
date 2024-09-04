@@ -24,18 +24,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@RequiredArgsConstructor
-@Entity
-@Table(name = "member", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+@NoArgsConstructor
+@Document(collection = "members")
 public class Member {
 
     @Id
@@ -55,7 +52,7 @@ public class Member {
     @NotNull
     @Size(min = 10, max = 12)
     @Digits(fraction = 0, integer = 12)
-    @Column(name = "phone_number")
+    @Indexed(unique = true)
     private String phoneNumber;
 
     public static Member fromMemberDTO(MemberDTO memberDTO) {
