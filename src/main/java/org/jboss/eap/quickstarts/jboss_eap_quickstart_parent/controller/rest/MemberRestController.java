@@ -2,13 +2,15 @@ package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest;
 
 import jakarta.validation.*;
 import lombok.extern.slf4j.Slf4j;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.constant.LoggingConstants;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -27,56 +29,62 @@ public class MemberRestController {
     @Autowired
     private MemberRegistration registration;
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping
-    public ResponseEntity<List<MemberDTO>> listAllMembers() {
+    public ResponseEntity<List<MemberResponseDTO>> listAllMembers() {
         log.info("Received request to list all members");
 
         List<Member> members = new ArrayList<>();
         try {
             members = repository.findAllByOrderByName();
         } catch (Exception exception) {
-            log.error("Error retrieving data : {}", exception.getMessage());
+            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
         log.debug("Found {} members", members.size());
-        List<MemberDTO> memberDTOs = members.stream()
-                .map(MemberDTO::fromMember)
+        List<MemberResponseDTO> memberDTOs = members.stream()
+                .map(MemberResponseDTO::fromMember)
                 .toList();
         return memberDTOs.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(memberDTOs);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping("/{id}")
-    public ResponseEntity<MemberDTO> lookupMemberById(@PathVariable("id") long id) {
+    public ResponseEntity<MemberResponseDTO> lookupMemberById(@PathVariable("id") long id) {
         log.info("Received request to lookup member by id: {}", id);
 
         Optional<Member> member = Optional.empty();
         try {
              member = repository.findById(id);
         } catch (Exception exception) {
-            log.error("Error retrieving data : {}", exception.getMessage());
+            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
         log.debug("Member found: {}", member.isPresent());
-        return member.map(m -> ResponseEntity.ok(MemberDTO.fromMember(m)))
+        return member.map(m -> ResponseEntity.ok(MemberResponseDTO.fromMember(m)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping
-    public ResponseEntity<?> createMember(@Valid @RequestBody MemberDTO memberDTO) {
-        log.info("Received request to create new member: {}", memberDTO);
+    public ResponseEntity<?> createMember(@Valid @RequestBody MemberRequestDTO memberRequestDTO) {
+        log.info("Received request to create new member: {}", memberRequestDTO);
         try {
-            Member member = Member.fromMemberDTO(memberDTO);
+            Member member = Member.fromMemberDTO(memberRequestDTO);
             validateMember(member);
-            registration.register(member);
+            Optional<MemberResponseDTO> memberResponseDTO = registration.register(member);
+            if (memberResponseDTO.isEmpty()) {
+                throw new RuntimeException("Can not register Member");
+            }
             log.info("Member created successfully");
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok(memberResponseDTO.get());
         } catch (ConstraintViolationException ce) {
-            log.error("Validation failed: {}", ce.getMessage());
+            log.error(LoggingConstants.VALIDATION_FAILED_CODE, LoggingConstants.VALIDATION_FAILED, ce.getMessage());
             return createViolationResponse(ce.getConstraintViolations());
         } catch (ValidationException e) {
-            log.error("Email already exists: {}", e.getMessage());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
             Map<String, String> responseObj = new HashMap<>();
             responseObj.put("email", "Email taken");
             return ResponseEntity.status(409).body(responseObj);
@@ -89,34 +97,35 @@ public class MemberRestController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<MemberDTO> deleteMemberById(@PathVariable("id") long id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<MemberResponseDTO> deleteMemberById(@PathVariable("id") long id) {
         log.info("Received request to delete member by id: {}", id);
-        ResponseEntity<MemberDTO> memberDTO = this.lookupMemberById(id);
+        ResponseEntity<MemberResponseDTO> memberResponseDTO = this.lookupMemberById(id);
 
-        if (!memberDTO.hasBody())
+        if (!memberResponseDTO.hasBody())
             return ResponseEntity.notFound().build();
 
         try{
             repository.deleteById(id);
-            log.info("Member deleted : {}", memberDTO.getBody().name());
+            log.info("Member deleted : {}", memberResponseDTO.getBody().name());
         }
         catch (Exception exception) {
             log.error("Error deleting member : {}", exception.getMessage());
             return ResponseEntity.internalServerError().build();
         }
 
-        return ResponseEntity.ok(memberDTO.getBody());
+        return ResponseEntity.ok(memberResponseDTO.getBody());
     }
 
     private void validateMember(Member member) throws ValidationException {
         log.info("Validating member: {}", member);
         Set<ConstraintViolation<Member>> violations = validator.validate(member);
         if (!violations.isEmpty()) {
-            log.error("Validation failed: {}", violations.size());
+            log.error(LoggingConstants.VALIDATION_FAILED_CODE, LoggingConstants.VALIDATION_FAILED, violations.size());
             throw new ConstraintViolationException(violations);
         }
         if (emailAlreadyExists(member.getEmail())) {
-            log.error("Email already exists: {}", member.getEmail());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, member.getEmail());
             throw new ValidationException("Unique Email Violation");
         }
     }

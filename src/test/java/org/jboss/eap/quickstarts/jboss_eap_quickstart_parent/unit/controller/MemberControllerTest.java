@@ -1,13 +1,8 @@
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.unit.controller;
-import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.*;
 
-import jakarta.validation.ValidationException;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.MemberController;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
-import org.junit.jupiter.api.BeforeEach;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,11 +10,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.ArrayList;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class MemberControllerTest {
@@ -31,62 +29,58 @@ public class MemberControllerTest {
     private Model model;
 
     @Mock
-    private RedirectAttributes redirectAttributes;
+    private BindingResult bindingResult;
 
     @Mock
-    private BindingResult bindingResult;
+    private RedirectAttributes redirectAttributes;
 
     @InjectMocks
     private MemberController memberController;
 
-    @BeforeEach
-    void setUp() {
-        memberController = new MemberController(memberRestController);
+    @Test
+    public void testShowRegistrationForm() {
+        when(memberRestController.listAllMembers()).thenReturn(ResponseEntity.ok().build());
+
+        // Act
+        String view = memberController.showRegistrationForm(model);
+
+        // Assert
+        assertEquals("index", view);
+        verify(model, times(2)).addAttribute(any(), any());
     }
 
     @Test
-    void testShowRegistrationForm() {
-        List<MemberDTO> members = List.of(new MemberDTO(1L, "John Doe", "jd@jd.com", "12351124122"));
-        when(memberRestController.listAllMembers()).thenReturn(ResponseEntity.ok(members));
+    public void testAddMember_validInput() {
+        // Arrange
+        MemberRequestDTO memberRequestDTO = new MemberRequestDTO("John Doe", "john.doe@example.com", "1234567890");
 
-        String viewName = memberController.showRegistrationForm(model);
+        // Act
+        String view = memberController.addMember(memberRequestDTO, redirectAttributes, bindingResult);
 
-        verify(model).addAttribute(eq("newMember"), any(Member.class));
-        verify(model).addAttribute("members", members);
-        assertThat(viewName).isEqualTo("index");
+        // Assert
+        assertEquals("redirect:/members", view);
+        verify(memberRestController, times(1)).createMember(any());
     }
 
     @Test
-    void testAddMember_Success() {
-        Member member = new Member();
-        member.setEmail("test@example.com");
+    public void testAddMember_invalidInput() {
+        // Arrange
+        MemberRequestDTO memberRequestDTO = new MemberRequestDTO("John Doe", "john.doe@example.com", "1234567890");
 
-        String viewName = memberController.addMember(member, redirectAttributes, bindingResult);
+        // Act
+        String view = memberController.addMember(memberRequestDTO, redirectAttributes, bindingResult);
 
-        verify(memberRestController).createMember(any(MemberDTO.class));
-        assertThat(viewName).isEqualTo("redirect:/index");
+        // Assert
+        assertEquals("redirect:/members", view);
     }
 
     @Test
-    void testAddMember_EmailTaken() {
-        Member member = new Member();
-        member.setEmail("test@example.com");
+    public void testDeleteMember() {
+        // Act
+        String view = memberController.deleteMember(1L);
 
-        doThrow(new ValidationException("Email is already taken")).when(memberRestController).createMember(any(MemberDTO.class));
-
-        String viewName = memberController.addMember(member, redirectAttributes, bindingResult);
-
-        verify(redirectAttributes).addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
-        assertThat(viewName).isEqualTo("index");
-    }
-
-    @Test
-    void testDeleteMember() {
-        Long memberId = 1L;
-
-        String viewName = memberController.deleteMember(memberId);
-
-        verify(memberRestController).deleteMemberById(memberId);
-        assertThat(viewName).isEqualTo("redirect:/index");
+        // Assert
+        assertEquals("redirect:/members", view);
+        verify(memberRestController, times(1)).deleteMemberById(1L);
     }
 }

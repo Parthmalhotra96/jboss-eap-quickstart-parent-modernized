@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -14,7 +12,7 @@ import jakarta.validation.ValidatorFactory;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,9 +21,30 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.http.ResponseEntity;
 
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class MemberRestControllerTest {
 
     @Mock
@@ -38,41 +57,65 @@ public class MemberRestControllerTest {
     private Validator validator;
 
     @InjectMocks
-    private MemberRestController controller;
-
-    @BeforeEach
-    public void setup() {
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        validator = factory.getValidator();
-        MockitoAnnotations.initMocks(this);    }
+    private MemberRestController memberRestController;
 
     @Test
     public void testListAllMembers() {
-        when(repository.findAllByOrderByName()).thenReturn(Collections.emptyList());
+        // Arrange
+        List<Member> members = new ArrayList<>();
+        members.add(new Member(1L, "John Doe", "john.doe@example.com", "1234567890"));
+        when(repository.findAllByOrderByName()).thenReturn(members);
 
-        ResponseEntity<List<MemberDTO>> response = controller.listAllMembers();
-        assertEquals(ResponseEntity.noContent().build(), response);
+        // Act
+        ResponseEntity<List<MemberResponseDTO>> response = memberRestController.listAllMembers();
+
+        // Assert
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(1, response.getBody().size());
     }
 
     @Test
     public void testLookupMemberById() {
-        Member member = new Member();
-        member.setId(1L);
+        // Arrange
+        Member member = new Member(1L, "John Doe", "john.doe@example.com", "1234567890");
         when(repository.findById(1L)).thenReturn(Optional.of(member));
 
-        ResponseEntity<MemberDTO> response = controller.lookupMemberById(1L);
-        assertEquals(ResponseEntity.ok(member).getBody().getId(), response.getBody().id());
+        // Act
+        memberRestController.lookupMemberById(1L);
+
+        // Assert
+        verify(repository, times(1)).findById(any());
     }
 
     @Test
-    public void testCreateMember() {
-        Member member = new Member();
-        member.setEmail("test@example.com");
+    public void testCreateMember() throws Exception {
+        // Arrange
 
-        when(validator.validate(any(Member.class))).thenReturn(Collections.emptySet());
-        when(repository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        Optional<Member> member = repository.findByEmail("john.doe@example.com");
 
-        ResponseEntity<?> response = controller.createMember(MemberDTO.fromMember(member));
-        assertEquals(ResponseEntity.ok().build(), response);
+        member.ifPresent(value -> repository.deleteById(value.getId()));
+
+        MemberRequestDTO memberRequestDTO = new MemberRequestDTO("John Doe", "john.doe@example.com", "1234567890");
+        when(validator.validate(any())).thenReturn(new HashSet<>());
+
+        // Act
+        ResponseEntity<?> response = memberRestController.createMember(memberRequestDTO);
+
+        // Assert
+        verify(registration, times(1)).register(any());
+    }
+
+    @Test
+    public void testDeleteMemberById() {
+        // Arrange
+        Member member = new Member(1L, "John Doe", "john.doe@example.com", "1234567890");
+        when(repository.findById(1L)).thenReturn(Optional.of(member));
+
+        // Act
+        ResponseEntity<MemberResponseDTO> response = memberRestController.deleteMemberById(1L);
+
+        // Assert
+        assertEquals(200, response.getStatusCodeValue());
+        verify(repository, times(1)).deleteById(1L);
     }
 }

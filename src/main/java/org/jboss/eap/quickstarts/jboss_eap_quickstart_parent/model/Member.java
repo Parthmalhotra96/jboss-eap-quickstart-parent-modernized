@@ -16,22 +16,19 @@
  */
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Document(collection = "members")
 public class Member {
 
@@ -55,12 +52,11 @@ public class Member {
     @Indexed(unique = true)
     private String phoneNumber;
 
-    public static Member fromMemberDTO(MemberDTO memberDTO) {
+    public static Member fromMemberDTO(MemberRequestDTO memberRequestDTO) {
         Member member = new Member();
-        member.setId(memberDTO.id());
-        member.setName(memberDTO.name());
-        member.setEmail(memberDTO.email());
-        member.setPhoneNumber(memberDTO.phoneNumber());
+        member.setName(memberRequestDTO.name());
+        member.setEmail(memberRequestDTO.email());
+        member.setPhoneNumber(memberRequestDTO.phoneNumber());
         return member;
     }
 

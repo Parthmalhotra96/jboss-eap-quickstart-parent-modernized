@@ -1,4 +1,4 @@
-package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.config;
+package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.config.error;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;

@@ -42,7 +42,7 @@ public class MemberRegistrationTest {
         member.setName("John Doe");
 
         when(genericIdGenerator.getNextId()).thenReturn(1L);
-
+        when(memberRepository.save(any())).thenReturn(new Member());
         memberRegistration.register(member);
 
         assertEquals(1L, member.getId());

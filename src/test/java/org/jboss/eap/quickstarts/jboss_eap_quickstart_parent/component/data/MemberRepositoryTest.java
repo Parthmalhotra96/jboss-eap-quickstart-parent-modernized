@@ -13,8 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.context.SpringBootTest;
 
-@DataJpaTest
+@SpringBootTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)
 public class MemberRepositoryTest {
 
@@ -29,6 +30,7 @@ public class MemberRepositoryTest {
     @Test
     public void testFindByEmail() {
         Member member = new Member();
+        member.setId(101L);
         member.setName("John Doe");
         member.setEmail("john.doe@example.com");
         member.setPhoneNumber("12312312312");
@@ -45,9 +47,11 @@ public class MemberRepositoryTest {
         member1.setName("Alice");
         member1.setEmail("alice@example.com");
         member1.setPhoneNumber("12312312312");
+        member1.setId(100L);
         memberRepository.save(member1);
 
         Member member2 = new Member();
+        member2.setId(101L);
         member2.setName("Bob");
         member2.setEmail("bob@example.com");
         member2.setPhoneNumber("9999999999");

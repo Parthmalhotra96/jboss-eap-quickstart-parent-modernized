@@ -19,10 +19,12 @@ package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.constant.LoggingConstants;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.MemberRestController;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberDTO;
-import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -35,14 +37,16 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 @Controller
+@RequestMapping("/members")
 public class MemberController {
 
     private final MemberRestController memberRestController;
 
-    @GetMapping("/index")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @GetMapping
     public String showRegistrationForm(Model model) {
         model.addAttribute("newMember", new Member());
-        List<MemberDTO> members = memberRestController.listAllMembers().getBody();
+        List<MemberResponseDTO> members = memberRestController.listAllMembers().getBody();
         model.addAttribute("members", members);
 
         Optional.ofNullable(members)
@@ -51,13 +55,14 @@ public class MemberController {
         return "index";
     }
 
-    @PostMapping("/members")
-    public String addMember(@ModelAttribute("newMember") Member member, RedirectAttributes redirectAttributes, BindingResult bindingResult) {
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PostMapping
+    public String addMember(@ModelAttribute("newMember") MemberRequestDTO member, RedirectAttributes redirectAttributes, BindingResult bindingResult) {
         log.debug("Adding new member: {}", member);
         try {
-            memberRestController.createMember(MemberDTO.fromMember(member));
+            memberRestController.createMember(member);
         } catch (ValidationException e) {
-            log.error("Email is already taken: {}", e.getMessage());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
             redirectAttributes.addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
             return "index";
         } catch (Exception e) {
@@ -66,15 +71,15 @@ public class MemberController {
             return "index";
         }
         log.debug("Member added successfully");
-        return "redirect:/index";
+        return "redirect:/members";
     }
 
-    //TODO: replace the delete in endpoint with delete mapping
-    @PostMapping("/members/{id}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/delete")
     public String deleteMember(@PathVariable Long id) {
         log.debug("Deleting member with ID: {}", id);
         memberRestController.deleteMemberById(id);
         log.debug("Member deleted successfully");
-        return "redirect:/index";
+        return "redirect:/members";
     }
 }
