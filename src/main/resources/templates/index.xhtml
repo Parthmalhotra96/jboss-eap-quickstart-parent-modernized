@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>kitchensink</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" th:href="@{/screens.css}" />
+</head>
+<body>
+<h1>Welcome to Spring Boot Kitchensink!!</h1>
+<p>You have successfully deployed a started Spring Boot application.</p>
+
+<form th:action="@{/members}" th:object="${newMember}" method="post">
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" th:field="*{name}" pattern="[a-zA-Z]+" required="required" title="Please enter valid name, only letters allowed"/>
+    </div>
+    <div>
+        <label for="email">Email:</label>
+        <input type="email" th:field="*{email}" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" required="required" title="Please enter a valid email address (e.g. example@example.com)"/>
+    </div>
+    <div>
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" th:field="*{phoneNumber}" pattern="[0-9]{10,12}" required="required" title="Please enter a valid phone number (10-12 digits)"/>
+    </div>
+    <div>
+        <button type="submit">Register</button>
+    </div>
+</form>
+
+<h2>Members</h2>
+<div th:if="${#lists.isEmpty(members)}">
+    <em>No registered members.</em>
+</div>
+<table th:if="${not #lists.isEmpty(members)}" class="simpletablestyle">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone #</th>
+        <th>REST URL</th>
+        <th>Remove Entry</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="member : ${members}">
+        <td th:text="${member.id}">Id</td>
+        <td th:text="${member.name}">Name</td>
+        <td th:text="${member.email}">Email</td>
+        <td th:text="${member.phoneNumber}">Phone Number</td>
+        <td>
+            <a th:href="'/kitchensink/rest/members/' + ${member.id}"> /rest/members/<a th:text="${member.id}">{id}</a></a>
+        </td>
+        <td>
+            <!-- Add a form for deleting the member -->
+            <form th:action="@{'/members/' + ${member.id} + '/delete'}" method="post">
+                <button type="submit">Remove</button>
+            </form>
+        </td>/rest/members
+    </tr>
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="5">
+            REST URL for all members: <a th:href="@{/rest/members}">/rest/members</a>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+</body>
+</html>
