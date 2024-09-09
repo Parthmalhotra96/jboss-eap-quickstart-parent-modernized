@@ -1,10 +1,20 @@
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.*;
 import lombok.extern.slf4j.Slf4j;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.constant.ErrorConstants;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.constant.LoggingConstants;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
+import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.ErrorResponse;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
@@ -18,6 +28,7 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping("/rest/members")
+@Tag(name = "REST", description = "REST APIs")
 public class MemberRestController {
 
     @Autowired
@@ -29,9 +40,16 @@ public class MemberRestController {
     @Autowired
     private MemberRegistration registration;
 
+    @Operation(summary = "Get all members", description = "Returns a list of all members")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Members found", content = { @Content(mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = MemberResponseDTO.class))) }),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) })
+    })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping
-    public ResponseEntity<List<MemberResponseDTO>> listAllMembers() {
+    public ResponseEntity<?> listAllMembers() {
         log.info("Received request to list all members");
 
         List<Member> members = new ArrayList<>();
@@ -39,7 +57,7 @@ public class MemberRestController {
             members = repository.findAllByOrderByName();
         } catch (Exception exception) {
             log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
         log.debug("Found {} members", members.size());
@@ -49,9 +67,19 @@ public class MemberRestController {
         return memberDTOs.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(memberDTOs);
     }
 
+    @Operation(summary = "Get member by ID", description = "Returns a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member found", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MemberResponseDTO.class)) }),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = { @Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) })
+    })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping("/{id}")
-    public ResponseEntity<MemberResponseDTO> lookupMemberById(@PathVariable("id") long id) {
+    public ResponseEntity<?> lookupMemberById(@Parameter(
+            description = "ID of member to be retrieved",
+            required = true) @PathVariable("id") long id) {
         log.info("Received request to lookup member by id: {}", id);
 
         Optional<Member> member = Optional.empty();
@@ -59,7 +87,7 @@ public class MemberRestController {
              member = repository.findById(id);
         } catch (Exception exception) {
             log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
         log.debug("Member found: {}", member.isPresent());
@@ -67,6 +95,17 @@ public class MemberRestController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Create a new member", description = "Creates a new member")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Member created", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MemberResponseDTO.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) }),
+            @ApiResponse(responseCode = "409", description = "Email already taken", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) }),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) })
+    })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping
     public ResponseEntity<?> createMember(@Valid @RequestBody MemberRequestDTO memberRequestDTO) {
@@ -85,33 +124,39 @@ public class MemberRestController {
             return createViolationResponse(ce.getConstraintViolations());
         } catch (ValidationException e) {
             log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
-            Map<String, String> responseObj = new HashMap<>();
-            responseObj.put("email", "Email taken");
-            return ResponseEntity.status(409).body(responseObj);
+            return ResponseEntity.status(409).body(new ErrorResponse(ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_CODE, ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_DESC));
         } catch (Exception e) {
             log.error("Error creating member: {}", e.getMessage());
-            Map<String, String> responseObj = new HashMap<>();
-            responseObj.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(responseObj);
+            return ResponseEntity.badRequest().body(new ErrorResponse(ErrorConstants.ERROR_CREATING_MEMBER_CODE, ErrorConstants.ERROR_CREATING_MEMBER_DESC));
         }
     }
 
+    @Operation(summary = "Delete a member", description = "Deletes a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member deleted", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MemberResponseDTO.class)) }),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = { @Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) })
+    })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MemberResponseDTO> deleteMemberById(@PathVariable("id") long id) {
+    public ResponseEntity<?> deleteMemberById(@Parameter(
+            description = "ID of member to be deleted",
+            required = true) @PathVariable("id") long id) {
         log.info("Received request to delete member by id: {}", id);
-        ResponseEntity<MemberResponseDTO> memberResponseDTO = this.lookupMemberById(id);
+        ResponseEntity<?> memberResponseDTO = this.lookupMemberById(id);
 
         if (!memberResponseDTO.hasBody())
             return ResponseEntity.notFound().build();
 
         try{
             repository.deleteById(id);
-            log.info("Member deleted : {}", memberResponseDTO.getBody().name());
+            log.info("Member deleted : {}", ((MemberResponseDTO)memberResponseDTO.getBody()).name());
         }
         catch (Exception exception) {
             log.error("Error deleting member : {}", exception.getMessage());
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
         return ResponseEntity.ok(memberResponseDTO.getBody());

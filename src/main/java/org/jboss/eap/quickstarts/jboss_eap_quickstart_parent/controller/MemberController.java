@@ -16,6 +16,11 @@
  */
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +29,7 @@ import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.Mem
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
@@ -31,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,19 +49,36 @@ public class MemberController {
 
     private final MemberRestController memberRestController;
 
+    @Operation(summary = "Get all members", description = "Returns a list of all members")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Members found", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "text/html"))
+    })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @GetMapping
     public String showRegistrationForm(Model model) {
         model.addAttribute("newMember", new Member());
-        List<MemberResponseDTO> members = memberRestController.listAllMembers().getBody();
+        ResponseEntity<?> memberList = memberRestController.listAllMembers();
+        List<MemberResponseDTO> members = new ArrayList<>();
+
+        if (memberList instanceof List<?>) {
+            members = (List<MemberResponseDTO>) memberList.getBody();
+        }
         model.addAttribute("members", members);
 
-        Optional.ofNullable(members)
+        Optional.of(members)
                 .ifPresent(m -> m.forEach(member -> log.debug("Member: {}, {}", member.id(), member.name())));
 
         return "index";
     }
 
+    @Operation(summary = "Create a new member", description = "Creates a new member")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Member created", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "409", description = "Email already taken", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "text/html"))
+    })
     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PostMapping
     public String addMember(@ModelAttribute("newMember") MemberRequestDTO member, RedirectAttributes redirectAttributes, BindingResult bindingResult) {
@@ -74,9 +98,17 @@ public class MemberController {
         return "redirect:/members";
     }
 
+    @Operation(summary = "Delete a member", description = "Deletes a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member deleted", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "text/html"))
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/delete")
-    public String deleteMember(@PathVariable Long id) {
+    public String deleteMember(@Parameter(
+            description = "ID of member to be deleted",
+            required = true) @PathVariable Long id) {
         log.debug("Deleting member with ID: {}", id);
         memberRestController.deleteMemberById(id);
         log.debug("Member deleted successfully");
