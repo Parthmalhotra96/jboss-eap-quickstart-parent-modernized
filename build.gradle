@@ -3,6 +3,9 @@ plugins {
 	id 'war'
 	id 'org.springframework.boot' version '3.3.3'
 	id 'io.spring.dependency-management' version '1.1.6'
+	id 'jacoco'
+	id 'checkstyle'
+	id 'pmd'
 }
 
 group = 'org.jboss.eap.quickstarts'
@@ -40,8 +43,37 @@ dependencies {
 	testImplementation "org.springframework.security:spring-security-test"
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testImplementation 'junit:junit:4.13.1'
+//	testImplementation 'org.jacoco:jacoco-maven-plugin:0.8.7'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+test {
+	finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacocoTestReport {
+	dependsOn test // tests are required to run before generating the report
+}
+
+checkstyle {
+	toolVersion = '8.41'
+	sourceSets = [sourceSets.main]
+	configFile = rootProject.file("./checkstyle.xml")
+	configProperties = ["suppressionFile": file("./checkstyle-suppressions.xml")]
+	maxErrors = 0
+	maxWarnings = 0
+	ignoreFailures = false
+	showViolations = true
+}
+
+check.dependsOn checkstyleMain
+check.dependsOn checkstyleTest
+
+pmd {
+	toolVersion = "6.55.0"
+}
+
+check.dependsOn pmdMain
+check.dependsOn pmdTest

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Management</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Futura', sans-serif;
+        }
+        .title-case {
+          font-variant: small-caps;
+          font-family: 'Inter';
+          text-transform: uppercase;
+          text-align: center;
+          margin: 40px auto;
+        }
+
+        .title-case::first-letter {
+          font-size: 1.2em;
+        }
+        .registration-box {
+            margin: 40px auto;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 45%;
+        }
+        h2, h3 {
+            font-family: 'Futura', sans-serif;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            font-size: 14px;
+        }
+        .form-control {
+            height: 30px;
+            padding: 5px;
+        }
+        button[type="submit"] {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="title-case">Member Management</h2>
+    <div class="registration-box">
+        <h3>Register New Member</h3>
+        <form th:action="@{/members}" th:object="${newMember}" method="post">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">REGISTER</button>
+        </form>
+    </div>
+    <div class="members-list">
+        <h3>Members List</h3>
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="member : ${members}">
+                <td th:text="${member.id}">Id</td>
+                <td th:text="${member.name}">Name</td>
+                <td th:text="${member.email}">Email</td>
+                <td th:text="${member.phoneNumber}">Phone Number</td>
+                <td>
+                    <form th:action="@{'/members/' + ${member.id}}" method="post">
+                        <button class="btn btn-sm btn-primary">UPDATE</button>
+                    </form>
+                    <form th:action="@{'/members/' + ${member.id} + '/delete'}" method="post">
+                        <button class="btn btn-sm btn-primary">DELETE</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script href="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>

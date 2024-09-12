@@ -1,5 +1,8 @@
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.constant;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class LoggingConstants {
 
     public static final String VALIDATION_FAILED_CODE = "APP101";

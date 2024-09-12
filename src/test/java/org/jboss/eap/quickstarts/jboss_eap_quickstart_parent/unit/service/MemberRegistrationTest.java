@@ -1,8 +1,5 @@
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.unit.service;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service.MemberRegistration;
@@ -15,6 +12,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class MemberRegistrationTest {
