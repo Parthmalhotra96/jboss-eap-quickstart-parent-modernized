@@ -29,12 +29,17 @@ import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.controller.rest.Mem
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberRequestDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
@@ -46,6 +51,9 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/members")
 public class MemberController {
+
+    @Value("${ui.v2.enabled}")
+    private boolean v2Enabled;
 
     private final MemberRestController memberRestController;
 
@@ -61,15 +69,21 @@ public class MemberController {
         ResponseEntity<?> memberList = memberRestController.listAllMembers();
         List<MemberResponseDTO> members = new ArrayList<>();
 
-        if (memberList instanceof List<?>) {
+        if (memberList.getBody() instanceof List<?>) {
             members = (List<MemberResponseDTO>) memberList.getBody();
+            members = members.stream().sorted().toList();
         }
         model.addAttribute("members", members);
 
         Optional.of(members)
                 .ifPresent(m -> m.forEach(member -> log.debug("Member: {}, {}", member.id(), member.name())));
 
-        return "index";
+        return v2Enabled? "indexv2" : "index";
+    }
+
+    @GetMapping("/default")
+    public String defaultPage(){
+        return "default";
     }
 
     @Operation(summary = "Create a new member", description = "Creates a new member")

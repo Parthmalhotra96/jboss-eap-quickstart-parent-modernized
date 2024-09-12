@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data;
+
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

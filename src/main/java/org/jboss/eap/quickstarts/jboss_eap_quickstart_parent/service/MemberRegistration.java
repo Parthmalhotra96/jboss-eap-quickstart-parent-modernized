@@ -17,17 +17,14 @@
 package org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.service;
 
 import lombok.extern.slf4j.Slf4j;
-
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.data.MemberRepository;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.Member;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.model.dto.MemberResponseDTO;
 import org.jboss.eap.quickstarts.jboss_eap_quickstart_parent.util.GenericIdGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
