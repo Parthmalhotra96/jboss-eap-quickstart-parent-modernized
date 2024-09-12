@@ -54,15 +54,20 @@
         </td>
         <td>
             <!-- Add a form for deleting the member -->
+            <form th:action="@{'/members/' + ${member.id} + '/update'}" method="get">
+                <button type="submit">Update</button>
+            </form>
+
+            <!-- Add a form for deleting the member -->
             <form th:action="@{'/members/' + ${member.id} + '/delete'}" method="post">
                 <button type="submit">Remove</button>
             </form>
-        </td>/rest/members
+        </td>
     </tr>
     </tbody>
     <tfoot>
     <tr>
-        <td colspan="5">
+        <td colspan="6">
             REST URL for all members: <a th:href="@{/rest/members}">/rest/members</a>
         </td>
     </tr>

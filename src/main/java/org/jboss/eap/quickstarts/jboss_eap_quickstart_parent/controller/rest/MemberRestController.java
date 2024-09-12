@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,7 +72,7 @@ public class MemberRestController {
         try {
             members = repository.findAllByOrderByName();
         } catch (Exception exception) {
-            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
+            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE + " : " + LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
             return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
@@ -101,7 +102,7 @@ public class MemberRestController {
         try {
              member = repository.findById(id);
         } catch (Exception exception) {
-            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE, LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
+            log.error(LoggingConstants.RETRIEVAL_ERROR_CODE + " : " + LoggingConstants.RETRIEVAL_ERROR, exception.getMessage());
             return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
@@ -135,14 +136,50 @@ public class MemberRestController {
             log.info("Member created successfully");
             return ResponseEntity.ok(memberResponseDTO.get());
         } catch (ConstraintViolationException ce) {
-            log.error(LoggingConstants.VALIDATION_FAILED_CODE, LoggingConstants.VALIDATION_FAILED, ce.getMessage());
+            log.error(LoggingConstants.VALIDATION_FAILED_CODE + " : " + LoggingConstants.VALIDATION_FAILED, ce.getMessage());
             return createViolationResponse(ce.getConstraintViolations());
         } catch (ValidationException e) {
-            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE + " : " + LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
             return ResponseEntity.status(409).body(new ErrorResponse(ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_CODE, ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_DESC));
         } catch (Exception e) {
             log.error("Error creating member: {}", e.getMessage());
             return ResponseEntity.badRequest().body(new ErrorResponse(ErrorConstants.ERROR_CREATING_MEMBER_CODE, ErrorConstants.ERROR_CREATING_MEMBER_DESC));
+        }
+    }
+
+    @Operation(summary = "Update a member", description = "Updates a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member updated", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MemberResponseDTO.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) }),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = { @Content(mediaType = "application/json")}),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = { @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ErrorResponse.class)) })
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateMember(@Parameter(
+            description = "ID of member to be updated",
+            required = true) @PathVariable("id") long id, @Valid @RequestBody MemberRequestDTO memberRequestDTO) {
+        log.info("Received request to update member by id: {}", id);
+        try {
+            Member member = Member.fromMemberDTO(memberRequestDTO);
+            Optional<MemberResponseDTO> memberResponseDTO = registration.update(id, member);
+            if (memberResponseDTO.isEmpty()) {
+                throw new RuntimeException("Can not update Member");
+            }
+            log.info("Member updated successfully");
+            return ResponseEntity.ok(memberResponseDTO.get());
+        } catch (ConstraintViolationException ce) {
+            log.error(LoggingConstants.VALIDATION_FAILED_CODE + " : " + LoggingConstants.VALIDATION_FAILED, ce.getMessage());
+            return createViolationResponse(ce.getConstraintViolations());
+        } catch (ValidationException e) {
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE + " : " + LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
+            return ResponseEntity.status(409).body(new ErrorResponse(ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_CODE, ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_DESC));
+        } catch (Exception e) {
+            log.error("Error updating member: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new ErrorResponse(ErrorConstants.ERROR_UPDATING_MEMBER_CODE, ErrorConstants.ERROR_UPDATING_MEMBER_DESC));
         }
     }
 
@@ -170,7 +207,7 @@ public class MemberRestController {
             log.info("Member deleted : {}", ((MemberResponseDTO)memberResponseDTO.getBody()).name());
         }
         catch (Exception exception) {
-            log.error("Error deleting member : {}", exception.getMessage());
+            log.error(LoggingConstants.DELETING_ERROR_CODE + " : " + LoggingConstants.DELETING_ERROR, exception.getMessage());
             return ResponseEntity.internalServerError().body(new ErrorResponse(ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_CODE, ErrorConstants.ERROR_RETRIEVING_DATA_ERROR_DESC));
         }
 
@@ -181,11 +218,11 @@ public class MemberRestController {
         log.info("Validating member: {}", member);
         Set<ConstraintViolation<Member>> violations = validator.validate(member);
         if (!violations.isEmpty()) {
-            log.error(LoggingConstants.VALIDATION_FAILED_CODE, LoggingConstants.VALIDATION_FAILED, violations.size());
+            log.error(LoggingConstants.VALIDATION_FAILED_CODE + " : " + LoggingConstants.VALIDATION_FAILED, violations.size());
             throw new ConstraintViolationException(violations);
         }
         if (emailAlreadyExists(member.getEmail())) {
-            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, member.getEmail());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE + " : " + LoggingConstants.EXISTING_EMAIL_ERROR, member.getEmail());
             throw new ValidationException("Unique Email Violation");
         }
     }

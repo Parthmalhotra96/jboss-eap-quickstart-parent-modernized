@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Update Member</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" th:href="@{/screens.css}" />
+</head>
+<body>
+<h1>Update Member</h1>
+<p>Please update the member details below:</p>
+
+<form th:action="@{'/members/' + ${member.id} + '/update'}" th:object="${member}" method="post">
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" th:field="*{name}" pattern="[a-zA-Z]+" required="required" title="Please enter valid name, only letters allowed"/>
+    </div>
+    <div>
+        <label for="email">Email:</label>
+        <input type="email" th:field="*{email}" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" required="required" title="Please enter a valid email address (e.g. example@example.com)"/>
+    </div>
+    <div>
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" th:field="*{phoneNumber}" pattern="[0-9]{10,12}" required="required" title="Please enter a valid phone number (10-12 digits)"/>
+    </div>
+    <div>
+        <button type="submit">Update</button>
+    </div>
+</form>
+
+</body>
+</html>

@@ -49,6 +49,19 @@ public class MemberRegistration {
         return Optional.of(memberResponseDTO);
     }
 
+    public Optional<MemberResponseDTO> update(Long id, Member member) throws Exception {
+        log.info("Updating member with ID: {}", id);
+        Optional<Member> existingMember = memberRepository.findById(id);
+        if (existingMember.isPresent()) {
+            member.setId(id);
+            Member updatedMember = memberRepository.save(member);
+            return Optional.of(MemberResponseDTO.fromMember(updatedMember));
+        } else {
+            log.error("Member not found with ID: {}", id);
+            throw new Exception("Member not found");
+        }
+    }
+
     public void deleteById(Long id) {
         log.info("Deleting member with {}", id);
         memberRepository.deleteById(id);

@@ -96,9 +96,8 @@
                 <td>
                     <div class="row">
                         <div class="col-sm-4">
-                            <form th:action="@{'/members/' + ${member.id}}" method="post">
-                                <button class="btn btn-sm btn-primary">Update</button>
-                            </form>
+                            <a th:href="@{'/members/' + ${member.id} + '/update'}" class="btn btn-sm btn-primary">Update</a>
+                        </div>
                         </div>
                         <div class="col-sm-4">
                             <form th:action="@{'/members/' + ${member.id} + '/delete'}" method="post">
