@@ -12,4 +12,10 @@ public class ErrorConstants {
 
     public static final String ERROR_CREATING_MEMBER_CODE = "APP500003";
     public static final String ERROR_CREATING_MEMBER_DESC = "Error Creating Member";
+
+    public static final String ERROR_UPDATING_MEMBER_CODE = "APP500004";
+    public static final String ERROR_UPDATING_MEMBER_DESC = "Error Updating Member";
+
+    public static final String ERROR_UNEXPECTED_CODE = "AP900001";
+    public static final String ERROR_UNEXPECTED_DESC = "An unexpected error occurred: {}";
 }

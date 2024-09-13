@@ -100,15 +100,43 @@ public class MemberController {
         try {
             memberRestController.createMember(member);
         } catch (ValidationException e) {
-            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE, LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE + " : " + LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
             redirectAttributes.addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
-            return "index";
+            return v2Enabled? "indexv2" : "index";
         } catch (Exception e) {
-            log.error("An unexpected error occurred: {}", e.getMessage());
+            log.error(LoggingConstants.UNEXPECTED_ERROR_CODE + " : " +  LoggingConstants.UNEXPECTED_ERROR, e.getMessage());
             redirectAttributes.addAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
-            return "index";
+            return v2Enabled? "indexv2" : "index";
         }
         log.debug("Member added successfully");
+        return "redirect:/members";
+    }
+
+    @Operation(summary = "Update a member", description = "Updates a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member updated", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "text/html"))
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @PostMapping("/{id}/update")
+    public String updateMember(@Parameter(
+            description = "ID of member to be updated",
+            required = true) @PathVariable Long id, @ModelAttribute("newMember") MemberRequestDTO member, RedirectAttributes redirectAttributes, BindingResult bindingResult) {
+        log.debug("Updating member with ID: {}", id);
+        try {
+            memberRestController.updateMember(id, member);
+        } catch (ValidationException e) {
+            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE+ " : " + LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
+            redirectAttributes.addAttribute("errorMessage", "Email is already taken. Please choose a different email.");
+            return v2Enabled? "updatev2" : "update";
+        } catch (Exception e) {
+            log.error(LoggingConstants.UNEXPECTED_ERROR_CODE + " : " + LoggingConstants.UNEXPECTED_ERROR, e.getMessage());
+            redirectAttributes.addAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
+            return v2Enabled? "updatev2" : "update";
+        }
+        log.debug("Member updated successfully");
         return "redirect:/members";
     }
 
@@ -127,5 +155,22 @@ public class MemberController {
         memberRestController.deleteMemberById(id);
         log.debug("Member deleted successfully");
         return "redirect:/members";
+    }
+
+    @Operation(summary = "Get member update form", description = "Returns the update form for a member by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Member update form found", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "404", description = "Member not found", content = @Content(mediaType = "text/html")),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "text/html"))
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+    @GetMapping("/{id}/update")
+    public String updateMemberForm(@PathVariable Long id, Model model) {
+        ResponseEntity<?> member = memberRestController.lookupMemberById(id);
+        if (member.hasBody()) {
+            model.addAttribute("member", member.getBody());
+            return v2Enabled? "updatev2" : "update";
+        }
+        return v2Enabled? "indexv2" : "index";
     }
 }
