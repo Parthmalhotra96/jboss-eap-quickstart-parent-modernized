@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,7 +51,7 @@ public class MemberControllerTest {
     public void testAddMember() throws Exception {
         MemberRequestDTO memberRequestDTO = new MemberRequestDTO("John Doe", "john.doe@example.com", "1234567890");
         when(memberRestController.createMember(any(MemberRequestDTO.class))).thenReturn(ResponseEntity.ok().build());
-        mockMvc.perform(MockMvcRequestBuilders.post("/members")
+        mockMvc.perform(post("/members")
                         .param("name", memberRequestDTO.name())
                         .param("email", memberRequestDTO.email())
                         .param("phoneNumber", memberRequestDTO.phoneNumber()))
@@ -61,7 +62,7 @@ public class MemberControllerTest {
     @WithMockUser(username = "admin", roles = "ADMIN")
     public void testDeleteMember() throws Exception {
         when(memberRestController.deleteMemberById(any(Long.class))).thenReturn(ResponseEntity.ok().build());
-        mockMvc.perform(MockMvcRequestBuilders.post("/members/1/delete"))
+        mockMvc.perform(post("/members/1/delete"))
                 .andDo(print());
     }
 }

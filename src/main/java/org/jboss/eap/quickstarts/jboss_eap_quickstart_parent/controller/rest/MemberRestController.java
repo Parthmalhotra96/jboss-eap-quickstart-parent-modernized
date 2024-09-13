@@ -174,9 +174,6 @@ public class MemberRestController {
         } catch (ConstraintViolationException ce) {
             log.error(LoggingConstants.VALIDATION_FAILED_CODE + " : " + LoggingConstants.VALIDATION_FAILED, ce.getMessage());
             return createViolationResponse(ce.getConstraintViolations());
-        } catch (ValidationException e) {
-            log.error(LoggingConstants.EXISTING_EMAIL_ERROR_CODE + " : " + LoggingConstants.EXISTING_EMAIL_ERROR, e.getMessage());
-            return ResponseEntity.status(409).body(new ErrorResponse(ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_CODE, ErrorConstants.ERROR_EMAIL_ALREADY_TAKEN_DESC));
         } catch (Exception e) {
             log.error("Error updating member: {}", e.getMessage());
             return ResponseEntity.badRequest().body(new ErrorResponse(ErrorConstants.ERROR_UPDATING_MEMBER_CODE, ErrorConstants.ERROR_UPDATING_MEMBER_DESC));
